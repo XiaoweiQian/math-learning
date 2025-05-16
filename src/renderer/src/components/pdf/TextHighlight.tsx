@@ -2,7 +2,7 @@ import { CSSProperties, MouseEvent } from "react";
 
 import "@/assets/TextHighlight.css";
 
-import type { ViewportHighlight } from "@/types";
+import type { ViewportHighlight } from "@/lib/types";
 
 /**
  * The props type for {@link TextHighlight}.

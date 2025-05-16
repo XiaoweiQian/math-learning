@@ -13,7 +13,7 @@ import {
   LTWH,
   LTWHP,
   ViewportHighlight,
-} from "@/types";
+} from "@/lib/types";
 
 const EMPTY_ID = "empty-id";
 

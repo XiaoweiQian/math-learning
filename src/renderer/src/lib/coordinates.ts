@@ -1,5 +1,5 @@
 import { PDFViewer } from "pdfjs-dist/types/web/pdf_viewer";
-import type { LTWHP, ViewportPosition, Scaled, ScaledPosition } from "../types";
+import type { LTWHP, ViewportPosition, Scaled, ScaledPosition } from "./types";
 import { PageViewport } from "pdfjs-dist";
 
 interface WIDTH_HEIGHT {

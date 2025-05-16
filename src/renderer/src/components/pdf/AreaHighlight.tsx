@@ -5,7 +5,7 @@ import { getPageFromElement } from "@/lib/pdfjs-dom";
 import "@/assets/AreaHighlight.css";
 
 import { Rnd } from "react-rnd";
-import type { LTWHP, ViewportHighlight } from "@/types";
+import type { LTWHP, ViewportHighlight } from "@/lib/types";
 
 /**
  * The props type for {@link AreaHighlight}.

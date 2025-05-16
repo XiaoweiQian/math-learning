@@ -6,7 +6,7 @@ import "@/assets/MouseSelection.css";
 import { PDFViewer } from "pdfjs-dist/types/web/pdf_viewer";
 import { viewportPositionToScaled } from "@/lib/coordinates";
 import screenshot from "@/lib/screenshot";
-import type { LTWH, LTWHP, ScaledPosition, ViewportPosition } from "@/types";
+import type { LTWH, LTWHP, ScaledPosition, ViewportPosition } from "@/lib/types";
 
 type Coords = {
   x: number;
@@ -109,6 +109,10 @@ export interface MouseSelectionProps {
  * @category Component
  * @internal
  */
+// Define a threshold for dragging, e.g., 5 pixels.
+// The square of the distance is used to avoid Math.sqrt.
+const DRAG_THRESHOLD_SQUARED = 25; // 5px * 5px
+
 export const MouseSelection = ({
   viewer,
   onSelection,
@@ -123,14 +127,18 @@ export const MouseSelection = ({
   const [locked, setLocked] = useState(false);
   const rootRef = useRef<HTMLDivElement | null>(null);
 
-  // Needed in order to grab the page info of a mouse selection
   const startTargetRef = useRef<HTMLElement | null>(null);
+  const mouseDownCoordsRef = useRef<Coords | null>(null);
+  const isDraggingRef = useRef(false);
 
   const reset = () => {
     onReset && onReset();
     setStart(null);
     setEnd(null);
     setLocked(false);
+    isDraggingRef.current = false;
+    mouseDownCoordsRef.current = null;
+    startTargetRef.current = null;
   };
 
   // Register event listeners onChange
@@ -138,78 +146,132 @@ export const MouseSelection = ({
     onChange && onChange(Boolean(start && end));
     if (!rootRef.current) return;
 
-    // Should be the PdfHighlighter
     const container = asElement(rootRef.current.parentElement);
+    if (!container) return;
 
     const handleMouseUp = (event: MouseEvent) => {
-      if (!start || !end || !startTargetRef.current) return;
+      const wasDragging = isDraggingRef.current;
 
-      const boundingRect = getBoundingRect(start, end);
+      // Clear dragging state immediately, regardless of outcome
+      isDraggingRef.current = false;
+      mouseDownCoordsRef.current = null;
 
-      // Check if the bounding rectangle has a minimum width and height
-      // to prevent recording selections with 0 area
-      const shouldEnd = boundingRect.width >= 1 && boundingRect.height >= 1;
+      if (wasDragging && start && end && startTargetRef.current) {
+        const boundingRect = getBoundingRect(start, end);
+        const shouldEnd = boundingRect.width >= 1 && boundingRect.height >= 1;
 
-      if (!container.contains(asElement(event.target)) || !shouldEnd) {
+        // Check if mouse up is within the container, might be optional based on desired UX
+        // const isTargetInContainer = container.contains(asElement(event.target));
+
+        if (!shouldEnd) { // Removed !isTargetInContainer check, often mouseup can be outside
+          reset();
+          return;
+        }
+
+        setLocked(true);
+
+        const page = getPageFromElement(startTargetRef.current);
+        if (!page) {
+          reset(); // Should not happen if startTargetRef is valid
+          return;
+        }
+
+        const pageBoundingRect: LTWHP = {
+          ...boundingRect,
+          top: boundingRect.top - page.node.offsetTop,
+          left: boundingRect.left - page.node.offsetLeft,
+          pageNumber: page.number,
+        };
+
+        const viewportPosition: ViewportPosition = {
+          boundingRect: pageBoundingRect,
+          rects: [],
+        };
+
+        const scaledPosition = viewportPositionToScaled(
+          viewportPosition,
+          viewer,
+        );
+
+        const image = screenshot(
+          pageBoundingRect,
+          pageBoundingRect.pageNumber,
+          viewer,
+        );
+
+        onSelection &&
+          onSelection(viewportPosition, scaledPosition, image, reset, event);
+        // If onSelection doesn't call reset, the selection remains "locked".
+        // A new mousedown will call reset().
+      } else if (wasDragging) {
+        // Was dragging, but state was inconsistent (e.g., start or end was null)
         reset();
-        return;
+      } else {
+        // Not dragging (was a click or very minor movement below threshold)
+        // Call onReset to signify that the mouse-down interaction sequence has ended.
+        onReset && onReset();
       }
-
-      setLocked(true);
-
-      const page = getPageFromElement(startTargetRef.current);
-      if (!page) return;
-
-      const pageBoundingRect: LTWHP = {
-        ...boundingRect,
-        top: boundingRect.top - page.node.offsetTop,
-        left: boundingRect.left - page.node.offsetLeft,
-        pageNumber: page.number,
-      };
-
-      const viewportPosition: ViewportPosition = {
-        boundingRect: pageBoundingRect,
-        rects: [],
-      };
-
-      const scaledPosition = viewportPositionToScaled(viewportPosition, viewer);
-
-      const image = screenshot(
-        pageBoundingRect,
-        pageBoundingRect.pageNumber,
-        viewer,
-      );
-
-      onSelection &&
-        onSelection(viewportPosition, scaledPosition, image, reset, event);
     };
 
     const handleMouseMove = (event: MouseEvent) => {
-      if (!rootRef.current || !start || locked) return;
-      setEnd(getContainerCoords(container, event.pageX, event.pageY));
+      if (!mouseDownCoordsRef.current || locked) return;
+
+      const currentMouseCoords = getContainerCoords(
+        container,
+        event.pageX,
+        event.pageY,
+      );
+
+      if (!isDraggingRef.current) {
+        const dx = currentMouseCoords.x - mouseDownCoordsRef.current.x;
+        const dy = currentMouseCoords.y - mouseDownCoordsRef.current.y;
+        const distanceSquared = dx * dx + dy * dy;
+
+        if (distanceSquared >= DRAG_THRESHOLD_SQUARED) {
+          isDraggingRef.current = true;
+          onDragStart && onDragStart(event);
+          setStart(mouseDownCoordsRef.current);
+          setEnd(currentMouseCoords);
+        }
+      } else {
+        // Already dragging, update the end position
+        setEnd(currentMouseCoords);
+      }
     };
 
     const handleMouseDown = (event: MouseEvent) => {
-      const shouldStart = (event: MouseEvent) =>
+      if (event.button !== 0) return; // Only left mouse button
+
+      // Reset any existing state if a new mousedown occurs
+      // This handles cases where a previous selection was locked or an interaction was interrupted.
+      if (locked || isDraggingRef.current || start) {
+         reset();
+      }
+
+
+      const shouldAttemptSelection =
         enableAreaSelection(event) &&
         isHTMLElement(event.target) &&
         Boolean(asElement(event.target).closest(".page"));
 
-      // If the user clicks anywhere outside a tip, reset the selection
-      const shouldReset = (event: MouseEvent) =>
-        start &&
-        !asElement(event.target).closest(".PdfHighlighter__tip-container");
-
-      if (!shouldStart(event)) {
-        if (shouldReset(event)) reset();
+      if (!shouldAttemptSelection) {
         return;
       }
 
+      // Call reset to ensure a clean state before potentially starting a new drag
+      // This is important if the previous conditions (locked, isDraggingRef, start) were false
+      // but we still want to ensure a clean slate for the new interaction.
+      reset();
+
+
       startTargetRef.current = asElement(event.target);
-      onDragStart && onDragStart(event);
-      setStart(getContainerCoords(container, event.pageX, event.pageY));
-      setEnd(null);
-      setLocked(false);
+      mouseDownCoordsRef.current = getContainerCoords(
+        container,
+        event.pageX,
+        event.pageY,
+      );
+      // Do NOT setStart, setEnd, or call onDragStart here.
+      // setLocked(false) is handled by reset().
     };
 
     /**
@@ -230,7 +292,7 @@ export const MouseSelection = ({
       container.removeEventListener("mousedown", handleMouseDown);
       document.removeEventListener("mouseup", handleMouseUp);
     };
-  }, [start, end]);
+  }, [start, end, enableAreaSelection]);
 
   return (
     <div className="MouseSelection-container" ref={rootRef}>

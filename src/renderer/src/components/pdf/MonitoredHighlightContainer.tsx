@@ -1,6 +1,6 @@
 import { ReactNode, useRef } from "react";
 import { usePdfHighlighterContext } from "@/lib/PdfHighlighterContext";
-import { Tip } from "@/types";
+import { Tip } from "@/lib/types";
 import { MouseMonitor } from "./MouseMonitor";
 
 /**

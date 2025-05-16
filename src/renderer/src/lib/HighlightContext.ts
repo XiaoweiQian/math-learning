@@ -6,7 +6,7 @@ import {
   LTWHP,
   Scaled,
   ViewportHighlight,
-} from "@/types";
+} from "./types";
 
 /**
  * A set of utilities for rendering highlights. Designed to be used within a

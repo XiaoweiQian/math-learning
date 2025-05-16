@@ -1,5 +1,6 @@
 import { LeftSidebar } from "@/components/left-sidebar";
 import { Separator } from "@/components/ui/separator";
+import { MousePointer, Square } from 'lucide-react';
 import {
   SidebarInset,
   SidebarProvider,
@@ -13,7 +14,7 @@ import {
 
 import { MouseEvent,useEffect, useRef, useState } from 'react';
 import HighlightContainer from './components/HighlightContainer';
-import { CommentedHighlight, GhostHighlight, Tip, ViewportHighlight } from '@/lib/types';
+import { CommentedHighlight, GhostHighlight, PdfSelection, Tip, ViewportHighlight } from '@/lib/types';
 import { PdfHighlighterUtils } from './lib/PdfHighlighterContext';
 import { PdfLoader } from './components/pdf/PdfLoader';
 import { PdfHighlighter } from './components/pdf/PdfHighlighter';
@@ -21,7 +22,9 @@ import { Highlight } from '@/lib/types';
 import AiChat from "./components/AiChat"; // Import the AiChat component
 import ContextMenu, { ContextMenuProps } from "./components/ContextMenu";
 import CommentForm from "./components/CommentForm";
-import ExpandableTip from "./components/ExpandableTip";
+import { Button } from "./components/ui/button";
+
+type HighlightingMode = 'text' | 'rectangle' | 'none';
 
 const PDF_URL = "../src/assets/Abstract_Algeb.pdf";
 
@@ -33,11 +36,15 @@ const parseIdFromHash = () => {
 
 
 function App(): React.JSX.Element {
+  const [highlightingMode, setHighlightingMode] = useState<HighlightingMode>('none');
   const [highlights, setHighlights] = useState<Array<CommentedHighlight>>([]);
   const highlighterUtilsRef = useRef<PdfHighlighterUtils>(null);
   const [contextMenu, setContextMenu] = useState<ContextMenuProps | null>(null);
-  const [highlightPen] = useState<boolean>(true);
 
+  const toggleHighlightingMode = (mode: HighlightingMode) => {
+    console.log('[App.tsx] Toggling highlighting mode to:', mode);
+    setHighlightingMode(prevMode => (prevMode === mode ? 'none' : mode));
+  };
 
 
 
@@ -142,6 +149,10 @@ function App(): React.JSX.Element {
     );
   };
 
+  const textSelection = (selection: PdfSelection) => {
+    addHighlight(selection.makeGhostHighlight(),"");
+  }
+
   return (
     <ResizablePanelGroup direction="horizontal" className="min-h-screen">
       <ResizablePanel defaultSize={70} minSize={50}> {/* Left Panel for Sidebar and PDF Viewer */}
@@ -152,20 +163,37 @@ function App(): React.JSX.Element {
               <SidebarTrigger className="-ml-1" />
               <Separator orientation="vertical" className="mr-2 h-4" />
               {/* You can add a title or other header elements here if needed */}
+              {/* 在这里或 SidebarTrigger 之后添加新的图标按钮 */}
+              <Button
+                variant={highlightingMode === 'text' ? 'secondary' : 'ghost'}
+                size="icon"
+                onClick={() => toggleHighlightingMode('text')}
+                title="文本选择高亮"
+              >
+                <MousePointer className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={highlightingMode === 'rectangle' ? 'secondary' : 'ghost'}
+                size="icon"
+                onClick={() => toggleHighlightingMode('rectangle')}
+                title="矩形选择高亮"
+              >
+                <Square className="h-4 w-4" />
+              </Button>
             </header>
             {/* Ensure content area is scrollable and accounts for header height */}
             <div className="h-[calc(100vh-3.5rem)] overflow-y-auto"> {/* Adjust 3.5rem if header height changes */}
               <PdfLoader document={PDF_URL}>
                 {(pdfDocument) => (
                   <PdfHighlighter
-                    enableAreaSelection={(event) => event.altKey}
+                    enableAreaSelection={() => highlightingMode === 'rectangle' }
                     pdfDocument={pdfDocument}
                     utilsRef={(_pdfHighlighterUtils) => {
                       highlighterUtilsRef.current = _pdfHighlighterUtils;
                     }}
-                    textSelectionColor={highlightPen ? "rgba(255, 226, 143, 1)" : undefined}
-                    onSelection={highlightPen ? (selection) => addHighlight(selection.makeGhostHighlight(), "") : undefined}
-                    selectionTip={highlightPen ? undefined : <ExpandableTip addHighlight={addHighlight} />}
+                    textSelectionColor={highlightingMode === 'text'? "rgba(255, 226, 143, 1)" : undefined}
+                    onSelection={(selection)=>textSelection(selection)}
+
 
                     highlights={highlights}
                   >

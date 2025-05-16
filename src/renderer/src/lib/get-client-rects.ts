@@ -1,4 +1,4 @@
-import type { LTWHP, Page } from "../types";
+import type { LTWHP, Page } from "./types";
 
 import optimizeClientRects from "./optimize-client-rects";
 

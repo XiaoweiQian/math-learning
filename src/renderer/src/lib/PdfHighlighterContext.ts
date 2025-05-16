@@ -1,5 +1,5 @@
 import { createContext, useContext } from "react";
-import { GhostHighlight, Highlight, PdfSelection, Tip } from "../types";
+import { GhostHighlight, Highlight, PdfSelection, Tip } from "./types";
 import { PDFViewer } from "pdfjs-dist/types/web/pdf_viewer";
 
 /**
