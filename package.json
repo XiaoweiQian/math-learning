@@ -34,6 +34,7 @@
     "lodash.debounce": "^4.0.8",
     "lucide-react": "^0.510.0",
     "pdfjs-dist": "github:XiaoweiQian/pdfjs-dist#main",
+    "react-resizable-panels": "^3.0.2",
     "react-rnd": "^10.5.2",
     "tailwind-merge": "^3.3.0",
     "tailwindcss": "^4.1.6"
