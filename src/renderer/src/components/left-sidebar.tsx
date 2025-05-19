@@ -1,5 +1,5 @@
 import * as React from "react"
-import { Command, FileIcon,Inbox, } from "lucide-react"
+import { Command, FileIcon, Inbox, } from "lucide-react"
 import {
   Sidebar,
   SidebarContent,

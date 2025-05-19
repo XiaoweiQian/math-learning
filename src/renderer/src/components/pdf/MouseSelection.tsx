@@ -245,7 +245,7 @@ export const MouseSelection = ({
       // Reset any existing state if a new mousedown occurs
       // This handles cases where a previous selection was locked or an interaction was interrupted.
       if (locked || isDraggingRef.current || start) {
-         reset();
+        reset();
       }
 
 

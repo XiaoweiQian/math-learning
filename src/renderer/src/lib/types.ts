@@ -1,5 +1,5 @@
-import { ReactNode } from "react";
-import { Root } from "react-dom/client";
+import { ReactNode } from 'react'
+import { Root } from 'react-dom/client'
 
 /**
  * A rectangle as measured by the viewport.
@@ -8,20 +8,20 @@ import { Root } from "react-dom/client";
  */
 export type LTWH = {
   /** The x coordinate of the top-left of the rectangle. */
-  left: number;
+  left: number
   /** The y coordinate of the top-left of the rectangle. */
-  top: number;
+  top: number
   /** Width of the rectangle, relative to top left of the viewport. */
-  width: number;
+  width: number
   /** Height of the rectangle, relative to top left of the viewport. */
-  height: number;
-};
+  height: number
+}
 
 /** @category Type */
 export type LTWHP = LTWH & {
   /** 1-Indexed page number */
-  pageNumber: number;
-};
+  pageNumber: number
+}
 
 /**
  * "scaled" means that data structure stores (0, 1) coordinates.
@@ -32,18 +32,18 @@ export type LTWHP = LTWH & {
  * @author Artem Tyurin <artem.tyurin@gmail.com>
  */
 export type Scaled = {
-  x1: number;
-  y1: number;
+  x1: number
+  y1: number
 
-  x2: number;
-  y2: number;
+  x2: number
+  y2: number
 
-  width: number;
-  height: number;
+  width: number
+  height: number
 
   /** 1-Indexed page number */
-  pageNumber: number;
-};
+  pageNumber: number
+}
 
 /**
  * Position of a Highlight relative to the viewport.
@@ -52,10 +52,10 @@ export type Scaled = {
  */
 export type ViewportPosition = {
   /** Bounding rectangle for the entire highlight. */
-  boundingRect: LTWHP;
+  boundingRect: LTWHP
   /** For text highlights, the rectangular highlights for each block of text. */
-  rects: Array<LTWHP>;
-};
+  rects: Array<LTWHP>
+}
 
 /**
  * Position of a Highlight with normalised coordinates.
@@ -64,12 +64,12 @@ export type ViewportPosition = {
  */
 export type ScaledPosition = {
   /** Bounding rectangle for the entire highlight. */
-  boundingRect: Scaled;
+  boundingRect: Scaled
   /** For text highlights, the rectangular highlights for each block of text. */
-  rects: Array<Scaled>;
+  rects: Array<Scaled>
   /** Rarely applicable property of whether coordinates should be in PDF coordinate space.  */
-  usePdfCoordinates?: boolean;
-};
+  usePdfCoordinates?: boolean
+}
 
 /**
  * The content of a highlight
@@ -77,9 +77,9 @@ export type ScaledPosition = {
  * @category Type
  */
 export type Content = {
-  text?: string;
-  image?: string;
-};
+  text?: string
+  image?: string
+}
 
 /**
  * What type the highlight is. This is the ideal way to determine whether to
@@ -87,7 +87,7 @@ export type Content = {
  *
  * @category Type
  */
-export type HighlightType = "text" | "area";
+export type HighlightType = 'text' | 'area'
 
 /**
  * This represents a selected (text/mouse) area that has been turned into a
@@ -96,11 +96,11 @@ export type HighlightType = "text" | "area";
  * @category Type
  */
 export interface Highlight {
-  id: string;
+  id: string
   /**
    * This property is planned to be non-optional in future.
    */
-  type?: HighlightType;
+  type?: HighlightType
   /**
    * @deprecated If you want your highlight to store content after being a
    * GhostHighlight, you should create your own interface extended off this. If
@@ -108,7 +108,7 @@ export interface Highlight {
    * to render, please use {@link type}.
    */
   content?: Content
-  position: ScaledPosition;
+  position: ScaledPosition
 }
 
 /**
@@ -117,8 +117,8 @@ export interface Highlight {
  *
  * @category Type
  */
-export interface GhostHighlight extends Required<Omit<Highlight, "id">> {
-  content: Content;
+export interface GhostHighlight extends Required<Omit<Highlight, 'id'>> {
+  content: Content
 }
 
 /**
@@ -127,12 +127,9 @@ export interface GhostHighlight extends Required<Omit<Highlight, "id">> {
  *
  * @category Type
  */
-export type ViewportHighlight<T extends Highlight = Highlight> = Omit<
-  T,
-  "position"
-> & {
-  position: ViewportPosition;
-};
+export type ViewportHighlight<T extends Highlight = Highlight> = Omit<T, 'position'> & {
+  position: ViewportPosition
+}
 
 /**
  * An area or text selection in a PDF Document.
@@ -141,8 +138,8 @@ export type ViewportHighlight<T extends Highlight = Highlight> = Omit<
  */
 export type PdfSelection = GhostHighlight & {
   /** Convert the current selection into a temporary highlight */
-  makeGhostHighlight(): GhostHighlight;
-};
+  makeGhostHighlight(): GhostHighlight
+}
 
 /**
  * A PDF.js page representation. This is the reference type for every page in the PdfHighlighter.
@@ -150,10 +147,10 @@ export type PdfSelection = GhostHighlight & {
  * @category Type
  */
 export type Page = {
-  node: HTMLElement;
+  node: HTMLElement
   /** 1-Index page number */
-  number: number;
-};
+  number: number
+}
 
 /**
  * All the DOM refs for a group of highlights on one page
@@ -161,10 +158,10 @@ export type Page = {
  * @category Type
  */
 export type HighlightBindings = {
-  reactRoot: Root;
-  container: Element;
-  textLayer: HTMLElement;
-};
+  reactRoot: Root
+  container: Element
+  textLayer: HTMLElement
+}
 
 /**
  * A popup that can be viewed inside a PdfHighlighter.
@@ -172,13 +169,13 @@ export type HighlightBindings = {
  * @category Type
  */
 export type Tip = {
-  position: ViewportPosition;
-  content: ReactNode;
-};
+  position: ViewportPosition
+  content: ReactNode
+}
 
 export interface CommentedHighlight extends Highlight {
-  content: Content;
-  comment?: string;
+  content: Content
+  comment?: string
 }
 
 /**
@@ -188,15 +185,14 @@ export interface CommentedHighlight extends Highlight {
  * @category Type
  */
 export type PdfScaleValue =
-  | "page-actual"
-  | "page-width"
-  | "page-height"
-  | "page-fit"
-  | "auto"
-  | number;
-
+  | 'page-actual'
+  | 'page-width'
+  | 'page-height'
+  | 'page-fit'
+  | 'auto'
+  | number
 
 export interface CommentedHighlight extends Highlight {
-  content: Content;
-  comment?: string;
+  content: Content
+  comment?: string
 }

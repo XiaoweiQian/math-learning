@@ -1,36 +1,36 @@
-import type { LTWHP, Page } from "./types";
+import type { LTWHP, Page } from './types'
 
-import optimizeClientRects from "./optimize-client-rects";
+import optimizeClientRects from './optimize-client-rects'
 
 const isClientRectInsidePageRect = (clientRect: DOMRect, pageRect: DOMRect) => {
   if (clientRect.top < pageRect.top) {
-    return false;
+    return false
   }
   if (clientRect.bottom > pageRect.bottom) {
-    return false;
+    return false
   }
   if (clientRect.right > pageRect.right) {
-    return false;
+    return false
   }
   if (clientRect.left < pageRect.left) {
-    return false;
+    return false
   }
 
-  return true;
-};
+  return true
+}
 
 const getClientRects = (
   range: Range,
   pages: Page[],
-  shouldOptimize: boolean = true,
+  shouldOptimize: boolean = true
 ): Array<LTWHP> => {
-  const clientRects = Array.from(range.getClientRects());
+  const clientRects = Array.from(range.getClientRects())
 
-  const rects: LTWHP[] = [];
+  const rects: LTWHP[] = []
 
   for (const clientRect of clientRects) {
     for (const page of pages) {
-      const pageRect = page.node.getBoundingClientRect();
+      const pageRect = page.node.getBoundingClientRect()
 
       if (
         isClientRectInsidePageRect(clientRect, pageRect) &&
@@ -45,15 +45,15 @@ const getClientRects = (
           left: clientRect.left + page.node.scrollLeft - pageRect.left,
           width: clientRect.width,
           height: clientRect.height,
-          pageNumber: page.number,
-        } as LTWHP;
+          pageNumber: page.number
+        } as LTWHP
 
-        rects.push(highlightedRect);
+        rects.push(highlightedRect)
       }
     }
   }
 
-  return shouldOptimize ? optimizeClientRects(rects) : rects;
-};
+  return shouldOptimize ? optimizeClientRects(rects) : rects
+}
 
-export default getClientRects;
+export default getClientRects

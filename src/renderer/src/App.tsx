@@ -6,13 +6,14 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
+
 import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
 } from "@/components/ui/resizable"; // Assuming this is the correct path after shadcn add
 
-import { MouseEvent,useEffect, useRef, useState } from 'react';
+import { MouseEvent, useEffect, useRef, useState } from 'react';
 import HighlightContainer from './components/HighlightContainer';
 import { CommentedHighlight, GhostHighlight, PdfSelection, Tip, ViewportHighlight } from '@/lib/types';
 import { PdfHighlighterUtils } from './lib/PdfHighlighterContext';
@@ -68,7 +69,7 @@ function App(): React.JSX.Element {
   };
 
 
-   // Scroll to highlight based on hash in the URL
+  // Scroll to highlight based on hash in the URL
   const scrollToHighlightFromHash = () => {
     const highlight = getHighlightById(parseIdFromHash());
 
@@ -150,7 +151,7 @@ function App(): React.JSX.Element {
   };
 
   const textSelection = (selection: PdfSelection) => {
-    addHighlight(selection.makeGhostHighlight(),"");
+    addHighlight(selection.makeGhostHighlight(), "");
   }
 
   return (
@@ -186,13 +187,13 @@ function App(): React.JSX.Element {
               <PdfLoader document={PDF_URL}>
                 {(pdfDocument) => (
                   <PdfHighlighter
-                    enableAreaSelection={() => highlightingMode === 'rectangle' }
+                    enableAreaSelection={() => highlightingMode === 'rectangle'}
                     pdfDocument={pdfDocument}
                     utilsRef={(_pdfHighlighterUtils) => {
                       highlighterUtilsRef.current = _pdfHighlighterUtils;
                     }}
-                    textSelectionColor={highlightingMode === 'text'? "rgba(255, 226, 143, 1)" : undefined}
-                    onSelection={(selection)=>textSelection(selection)}
+                    textSelectionColor={highlightingMode === 'text' ? "rgba(255, 226, 143, 1)" : undefined}
+                    onSelection={(selection) => textSelection(selection)}
 
 
                     highlights={highlights}
@@ -211,7 +212,7 @@ function App(): React.JSX.Element {
         </SidebarProvider>
       </ResizablePanel>
       <ResizableHandle withHandle />
-      <ResizablePanel  minSize={20}> {/* Right Panel for AI Chat */}
+      <ResizablePanel minSize={20}> {/* Right Panel for AI Chat */}
         <AiChat highlights={highlights} />
       </ResizablePanel>
     </ResizablePanelGroup>

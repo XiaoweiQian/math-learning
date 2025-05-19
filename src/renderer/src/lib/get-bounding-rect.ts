@@ -1,32 +1,29 @@
-import type { LTWHP } from "./types";
+import type { LTWHP } from './types'
 
 const getBoundingRect = (clientRects: Array<LTWHP>): LTWHP => {
   const rects = Array.from(clientRects).map((rect) => {
-    const { left, top, width, height, pageNumber } = rect;
+    const { left, top, width, height, pageNumber } = rect
 
-    const X0 = left;
-    const X1 = left + width;
+    const X0 = left
+    const X1 = left + width
 
-    const Y0 = top;
-    const Y1 = top + height;
+    const Y0 = top
+    const Y1 = top + height
 
-    return { X0, X1, Y0, Y1, pageNumber };
-  });
+    return { X0, X1, Y0, Y1, pageNumber }
+  })
 
-  let firstPageNumber = Number.MAX_SAFE_INTEGER;
+  let firstPageNumber = Number.MAX_SAFE_INTEGER
 
   rects.forEach((rect) => {
-    firstPageNumber = Math.min(
-      firstPageNumber,
-      rect.pageNumber ?? firstPageNumber,
-    );
-  });
+    firstPageNumber = Math.min(firstPageNumber, rect.pageNumber ?? firstPageNumber)
+  })
 
   const rectsWithSizeOnFirstPage = rects.filter(
     (rect) =>
       (rect.X0 > 0 || rect.X1 > 0 || rect.Y0 > 0 || rect.Y1 > 0) &&
-      rect.pageNumber === firstPageNumber,
-  );
+      rect.pageNumber === firstPageNumber
+  )
 
   const optimal = rectsWithSizeOnFirstPage.reduce((res, rect) => {
     return {
@@ -36,19 +33,19 @@ const getBoundingRect = (clientRects: Array<LTWHP>): LTWHP => {
       Y0: Math.min(res.Y0, rect.Y0),
       Y1: Math.max(res.Y1, rect.Y1),
 
-      pageNumber: firstPageNumber,
-    };
-  }, rectsWithSizeOnFirstPage[0]);
+      pageNumber: firstPageNumber
+    }
+  }, rectsWithSizeOnFirstPage[0])
 
-  const { X0, X1, Y0, Y1, pageNumber } = optimal;
+  const { X0, X1, Y0, Y1, pageNumber } = optimal
 
   return {
     left: X0,
     top: Y0,
     width: X1 - X0,
     height: Y1 - Y0,
-    pageNumber,
-  };
-};
+    pageNumber
+  }
+}
 
-export default getBoundingRect;
+export default getBoundingRect

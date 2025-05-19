@@ -1,4 +1,4 @@
-import  { MouseEvent } from "react";
+import { MouseEvent } from "react";
 import { CommentedHighlight, ViewportHighlight } from "@/lib/types";
 import { useHighlightContainerContext } from "@/lib/HighlightContext";
 import { usePdfHighlighterContext } from "@/lib/PdfHighlighterContext";

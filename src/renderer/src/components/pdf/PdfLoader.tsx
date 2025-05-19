@@ -18,7 +18,7 @@ const DEFAULT_ON_ERROR = (error: Error) => {
   throw new Error(`Error loading PDF document: ${error.message}!`);
 };
 
-const DEFAULT_WORKER_SRC ="../../../src/assets/pdf.worker.mjs";
+const DEFAULT_WORKER_SRC = "../../../src/assets/pdf.worker.mjs";
 
 
 /**
