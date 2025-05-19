@@ -15,8 +15,9 @@ const groupHighlightsByPage = (
       highlight.position.boundingRect.pageNumber,
       ...highlight.position.rects.map((rect) => rect.pageNumber || 0),
     ];
-
-    pageNumbers.forEach((pageNumber) => {
+    // Filter out duplicates
+    const uniquePageNumbers = new Set(pageNumbers);
+    uniquePageNumbers.forEach((pageNumber) => {
       acc[pageNumber] ||= [];
       const pageSpecificHighlight = {
         ...highlight,

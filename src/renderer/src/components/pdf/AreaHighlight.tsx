@@ -1,4 +1,4 @@
-import { CSSProperties, MouseEvent } from "react";
+import { CSSProperties, MouseEvent as ReactMouseEvent } from "react"; // Aliased MouseEvent
 
 import { getPageFromElement } from "@/lib/pdfjs-dom";
 
@@ -42,7 +42,7 @@ export interface AreaHighlightProps {
    *
    * @param event - The mouse event associated with the context menu.
    */
-  onContextMenu?(event: MouseEvent<HTMLDivElement>): void;
+  onContextMenu?(event: ReactMouseEvent<HTMLDivElement>): void; // Updated to ReactMouseEvent
 
   /**
    * Event called whenever the user tries to move or resize an {@link AreaHighlight}.
@@ -77,10 +77,19 @@ export const AreaHighlight = ({
   // User moves Rnd -> Rnd records new pos -> Rnd jumps back -> highlight updates -> Rnd re-renders at new pos
   const key = `${highlight.position.boundingRect.width}${highlight.position.boundingRect.height}${highlight.position.boundingRect.left}${highlight.position.boundingRect.top}`;
 
+  const handleMouseDown = (event: ReactMouseEvent<HTMLDivElement>) => {
+    // Prevent this mousedown event from bubbling up to other listeners,
+    // such as the one in MouseSelection.tsx that initiates a new selection box.
+    event.stopPropagation();
+    // Note: onEditStart is called by the Rnd component's onDragStart/onResizeStart
+    // props, so that functionality remains intact.
+  };
+
   return (
     <div
       className={`AreaHighlight ${highlightClass}`}
       onContextMenu={onContextMenu}
+      onMouseDown={handleMouseDown} // Added this mousedown handler
     >
       <Rnd
         className="AreaHighlight__part"
@@ -90,7 +99,6 @@ export const AreaHighlight = ({
             top: data.y,
             left: data.x,
           };
-
           onChange && onChange(boundingRect);
         }}
         onResizeStop={(_mouseEvent, _direction, ref, _delta, position) => {
@@ -101,7 +109,6 @@ export const AreaHighlight = ({
             height: ref.offsetHeight,
             pageNumber: getPageFromElement(ref)?.number || -1,
           };
-
           onChange && onChange(boundingRect);
         }}
         onDragStart={onEditStart}
