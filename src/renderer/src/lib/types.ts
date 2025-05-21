@@ -176,6 +176,8 @@ export type Tip = {
 export interface CommentedHighlight extends Highlight {
   content: Content
   comment?: string
+  timestamp: number;
+  color?: string; // Add this line
 }
 
 /**
@@ -191,8 +193,3 @@ export type PdfScaleValue =
   | 'page-fit'
   | 'auto'
   | number
-
-export interface CommentedHighlight extends Highlight {
-  content: Content
-  comment?: string
-}

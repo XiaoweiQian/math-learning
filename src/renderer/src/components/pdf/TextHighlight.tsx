@@ -84,7 +84,11 @@ export const TextHighlight = ({
             onMouseOut={onMouseOut}
             onClick={onClick}
             key={index}
-            style={{ ...rect, ...style }}
+            style={{
+              ...rect,
+              background: highlight.color || 'rgba(255, 226, 143, 0.5)', // Default yellow if no color
+              ...style, // Allow overriding with passed styles
+            }}
             className={`TextHighlight__part`}
           />
         ))}

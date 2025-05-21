@@ -67,66 +67,132 @@ export const AreaHighlight = ({
   bounds,
   onContextMenu,
   onEditStart,
-  style,
+  style, // This is the style prop passed to AreaHighlight, not the one for Rnd directly
 }: AreaHighlightProps) => {
   const highlightClass = isScrolledTo ? "AreaHighlight--scrolledTo" : "";
 
+  const { color, type, position } = highlight;
+  // Default color for area/underline if not provided, though it should always be.
+  const highlightColor = color || 'rgba(0, 0, 255, 0.7)'; // Default blue with opacity
+
+  const underlineThickness = 3; // px
+
+  let appliedStyle: CSSProperties = {
+    // Base styles for the Rnd component itself will be minimal,
+    // the visual styling is applied to its child or via its own style prop.
+  };
+
+  let defaultPositionAndSize = {
+    x: position.boundingRect.left,
+    y: position.boundingRect.top,
+    width: position.boundingRect.width,
+    height: position.boundingRect.height,
+  };
+
+  if (type === 'underline') {
+    appliedStyle.background = highlightColor;
+    appliedStyle.height = `${underlineThickness}px`;
+    // Adjust default position and size for Rnd
+    defaultPositionAndSize.y = position.boundingRect.top + position.boundingRect.height - underlineThickness;
+    defaultPositionAndSize.height = underlineThickness;
+  } else { // 'area' or other types
+    // Attempt to make color semi-transparent for background if it's not already rgba
+    let backgroundColor = highlightColor;
+    if (highlightColor.startsWith('#') && highlightColor.length === 7) {
+      backgroundColor = `${highlightColor}4D`; // Approx 30% opacity for hex
+    } else if (highlightColor.startsWith('rgb(')) {
+      backgroundColor = highlightColor.replace('rgb(', 'rgba(').replace(')', ', 0.3)');
+    } else if (highlightColor.startsWith('rgba(')) {
+      // If alpha is 1 or not specified at the end, change it
+      if (!highlightColor.match(/,\s*[0-9.]+\s*\)$/) || highlightColor.match(/,\s*1\s*\)$/)) {
+         backgroundColor = highlightColor.replace(/,\s*1\s*\)$|(\)$)/, ', 0.3)');
+      }
+    }
+    appliedStyle.background = backgroundColor;
+    appliedStyle.border = `1px solid ${highlightColor}`;
+  }
+  
+  // Merge with any externally passed style
+  appliedStyle = { ...appliedStyle, ...style };
+
+
   // Generate key based on position. This forces a remount (and a defaultpos update)
   // whenever highlight position changes (e.g., when updated, scale changes, etc.)
-  // We don't use position as state because when updating Rnd this would happen and cause flickering:
-  // User moves Rnd -> Rnd records new pos -> Rnd jumps back -> highlight updates -> Rnd re-renders at new pos
-  const key = `${highlight.position.boundingRect.width}${highlight.position.boundingRect.height}${highlight.position.boundingRect.left}${highlight.position.boundingRect.top}`;
+  const key = `${position.boundingRect.pageNumber}-${defaultPositionAndSize.x}-${defaultPositionAndSize.y}-${defaultPositionAndSize.width}-${defaultPositionAndSize.height}-${type}-${color}`;
+
 
   const handleMouseDown = (event: ReactMouseEvent<HTMLDivElement>) => {
-    // Prevent this mousedown event from bubbling up to other listeners,
-    // such as the one in MouseSelection.tsx that initiates a new selection box.
     event.stopPropagation();
-    // Note: onEditStart is called by the Rnd component's onDragStart/onResizeStart
-    // props, so that functionality remains intact.
   };
 
   return (
+    // The outer div is mainly for context menu and initial mouse down, Rnd handles its own appearance.
     <div
       className={`AreaHighlight ${highlightClass}`}
       onContextMenu={onContextMenu}
-      onMouseDown={handleMouseDown} // Added this mousedown handler
+      onMouseDown={handleMouseDown} 
+      style={{ // Ensure this div itself doesn't mess with layout if Rnd is absolutely positioned
+        position: 'absolute', 
+        left: defaultPositionAndSize.x, 
+        top: defaultPositionAndSize.y,
+        width: defaultPositionAndSize.width,
+        height: defaultPositionAndSize.height,
+      }}
     >
       <Rnd
         className="AreaHighlight__part"
+        style={appliedStyle} // Apply the calculated style to Rnd
         onDragStop={(_, data) => {
-          const boundingRect: LTWHP = {
-            ...highlight.position.boundingRect,
+          const newRect: LTWHP = {
+            ...position.boundingRect, // keep original pageNumber and other potential fields
             top: data.y,
             left: data.x,
+            width: defaultPositionAndSize.width, // Keep original width on drag
+            height: defaultPositionAndSize.height, // Keep original height on drag (especially for underlines)
           };
-          onChange && onChange(boundingRect);
+          if (type === 'underline') {
+            newRect.height = underlineThickness; // Ensure underline height is maintained
+          }
+          onChange && onChange(newRect);
         }}
-        onResizeStop={(_mouseEvent, _direction, ref, _delta, position) => {
-          const boundingRect: LTWHP = {
-            top: position.y,
-            left: position.x,
+        onResizeStop={(_mouseEvent, _direction, ref, _delta, newPosition) => {
+          let newRect: LTWHP = {
+            top: newPosition.y,
+            left: newPosition.x,
             width: ref.offsetWidth,
             height: ref.offsetHeight,
-            pageNumber: getPageFromElement(ref)?.number || -1,
+            pageNumber: getPageFromElement(ref)?.number || position.boundingRect.pageNumber,
           };
-          onChange && onChange(boundingRect);
+          if (type === 'underline') {
+            // For underlines, maintain fixed height and adjust top if resizing from bottom
+            // The Rnd component might make it difficult to only resize width,
+            // but we can enforce the height in the data we send back.
+            newRect.height = underlineThickness;
+            // If resizing changes y, it means top edge moved. We want underline at bottom of original selection.
+            // This part is tricky with Rnd. For now, we ensure height is fixed.
+            // User might still "move" it vertically with resize handles.
+          }
+          onChange && onChange(newRect);
         }}
         onDragStart={onEditStart}
         onResizeStart={onEditStart}
-        default={{
-          x: highlight.position.boundingRect.left,
-          y: highlight.position.boundingRect.top,
-          width: highlight.position.boundingRect.width,
-          height: highlight.position.boundingRect.height,
-        }}
+        default={defaultPositionAndSize}
         key={key}
         bounds={bounds}
-        // Prevevent any event clicks as clicking is already used for movement
         onClick={(event: Event) => {
           event.stopPropagation();
           event.preventDefault();
         }}
-        style={style}
+        enableResizing={ type !== 'underline' ? undefined : { // Disable all resize handles for underline except left/right
+          top: false,
+          right: true,
+          bottom: false,
+          left: true,
+          topRight: false,
+          bottomRight: false,
+          bottomLeft: false,
+          topLeft: false,
+        }}
       />
     </div>
   );
